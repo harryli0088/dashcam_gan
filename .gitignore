@@ -1,4 +1,4 @@
-image_data/
 video_data/
 mnist_data/
 mnist_samples/
+.DS_Store

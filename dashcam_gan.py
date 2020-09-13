@@ -17,6 +17,9 @@ transform = transforms.Compose([transforms.ToTensor(),
   transforms.Normalize((0.5,), (0.5,))
 ])
 
+TRAIN_DATA_PATH = "./image_data/train/"
+TEST_DATA_PATH = "./image_data/test/"
+
 train_dataset = datasets.MNIST(root='./mnist_data/', train=True, transform=transform, download=True)
 test_dataset = datasets.MNIST(root='./mnist_data/', train=False, transform=transform, download=False)
 
