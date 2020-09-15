@@ -10,22 +10,26 @@ from torchvision.utils import save_image
 # Device configuration
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-bs = 100
 
-# MNIST Dataset
-transform = transforms.Compose([transforms.ToTensor(),
-  transforms.Normalize((0.5,), (0.5,))
-])
 
-TRAIN_DATA_PATH = "./image_data/train/"
-TEST_DATA_PATH = "./image_data/test/"
 
-train_dataset = datasets.MNIST(root='./mnist_data/', train=True, transform=transform, download=True)
-test_dataset = datasets.MNIST(root='./mnist_data/', train=False, transform=transform, download=False)
+BATCH_SIZE = 100
+NOISE_DIM = 100
+EPOCHS = 200
+TRAIN_DATA_PATH = "./image_data_train"
+TEST_DATA_PATH = "./image_data_test"
+TRANSFORM_IMG = transforms.Compose([
+    transforms.Resize(256),
+    transforms.CenterCrop(256),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                         std=[0.229, 0.224, 0.225] )
+    ])
 
-# Data Loader (Input Pipeline)
-train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=bs, shuffle=True)
-test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=bs, shuffle=False)
+train_dataset = datasets.ImageFolder(root=TRAIN_DATA_PATH, transform=TRANSFORM_IMG)
+train_data_loader = torch.utils.data.DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+test_dataset = datasets.ImageFolder(root=TEST_DATA_PATH, transform=TRANSFORM_IMG)
+test_data_loader  = torch.utils.data.DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
 
 
 
@@ -64,11 +68,11 @@ class Discriminator(nn.Module):
 
 
 # build network
-z_dim = 100
-mnist_dim = train_dataset.train_data.size(1) * train_dataset.train_data.size(2)
 
-G = Generator(g_input_dim = z_dim, g_output_dim = mnist_dim).to(device)
-D = Discriminator(mnist_dim).to(device)
+dashcam_dim = train_dataset[0][0].shape[0] * train_dataset[0][0].shape[1] * train_dataset[0][0].shape[2]
+
+G = Generator(g_input_dim = NOISE_DIM, g_output_dim = dashcam_dim).to(device)
+D = Discriminator(dashcam_dim).to(device)
 
 
 # loss
@@ -85,7 +89,7 @@ def D_train(x):
     D.zero_grad()
 
     # train discriminator on real
-    x_real, y_real = x.view(-1, mnist_dim), torch.ones(bs, 1)
+    x_real, y_real = x.view(-1, dashcam_dim), torch.ones(BATCH_SIZE, 1)
     x_real, y_real = Variable(x_real.to(device)), Variable(y_real.to(device))
 
     D_output = D(x_real)
@@ -93,8 +97,8 @@ def D_train(x):
     D_real_score = D_output
 
     # train discriminator on facke
-    z = Variable(torch.randn(bs, z_dim).to(device))
-    x_fake, y_fake = G(z), Variable(torch.zeros(bs, 1).to(device))
+    z = Variable(torch.randn(BATCH_SIZE, NOISE_DIM).to(device))
+    x_fake, y_fake = G(z), Variable(torch.zeros(BATCH_SIZE, 1).to(device))
 
     D_output = D(x_fake)
     D_fake_loss = criterion(D_output, y_fake)
@@ -111,8 +115,8 @@ def G_train(x):
     #=======================Train the generator=======================#
     G.zero_grad()
 
-    z = Variable(torch.randn(bs, z_dim).to(device))
-    y = Variable(torch.ones(bs, 1).to(device))
+    z = Variable(torch.randn(BATCH_SIZE, NOISE_DIM).to(device))
+    y = Variable(torch.ones(BATCH_SIZE, 1).to(device))
 
     G_output = G(z)
     D_output = D(G_output)
@@ -124,18 +128,21 @@ def G_train(x):
 
     return G_loss.data.item()
 
-n_epoch = 200
-for epoch in range(1, n_epoch+1):
+for epoch in range(1, EPOCHS+1):
     D_losses, G_losses = [], []
-    for batch_idx, (x, _) in enumerate(train_loader):
+    for batch_idx, (x, _) in enumerate(train_data_loader):
+        print("epoch", epoch, "batch_idx",batch_idx)
         D_losses.append(D_train(x))
         G_losses.append(G_train(x))
 
+        filename_base = "-epoch-"+str(epoch)+"-batch_idx-"+str(batch_idx)
+        torch.save(G.state_dict(), "./dashcam_model/g"+filename_base)
+        torch.save(D.state_dict(), "./dashcam_model/d"+filename_base)
     print('[%d/%d]: loss_d: %.3f, loss_g: %.3f' % (
-            (epoch), n_epoch, torch.mean(torch.FloatTensor(D_losses)), torch.mean(torch.FloatTensor(G_losses))))
+            (epoch), EPOCHS, torch.mean(torch.FloatTensor(D_losses)), torch.mean(torch.FloatTensor(G_losses))))
 
 with torch.no_grad():
-    test_z = Variable(torch.randn(bs, z_dim).to(device))
+    test_z = Variable(torch.randn(BATCH_SIZE, NOISE_DIM).to(device))
     generated = G(test_z)
 
-    save_image(generated.view(generated.size(0), 1, 28, 28), './samples/sample_' + '.png')
+    save_image(generated.view(generated.size(0), 1, 28, 28), './dashcam_samples/sample_' + '.png')
