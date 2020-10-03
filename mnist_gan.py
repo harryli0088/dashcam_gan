@@ -10,7 +10,7 @@ from torchvision.utils import save_image
 # Device configuration
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-bs = 100
+batch_size = 100
 
 # MNIST Dataset
 transform = transforms.Compose([transforms.ToTensor(),
@@ -21,8 +21,8 @@ train_dataset = datasets.MNIST(root='./mnist_data/', train=True, transform=trans
 test_dataset = datasets.MNIST(root='./mnist_data/', train=False, transform=transform, download=False)
 
 # Data Loader (Input Pipeline)
-train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=bs, shuffle=True)
-test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=bs, shuffle=False)
+train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
+test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False)
 
 
 
@@ -82,7 +82,7 @@ def D_train(x):
     D.zero_grad()
 
     # train discriminator on real
-    x_real, y_real = x.view(-1, mnist_dim), torch.ones(bs, 1)
+    x_real, y_real = x.view(-1, mnist_dim), torch.ones(batch_size, 1)
     x_real, y_real = Variable(x_real.to(device)), Variable(y_real.to(device))
 
     D_output = D(x_real)
@@ -90,8 +90,8 @@ def D_train(x):
     D_real_score = D_output
 
     # train discriminator on facke
-    z = Variable(torch.randn(bs, z_dim).to(device))
-    x_fake, y_fake = G(z), Variable(torch.zeros(bs, 1).to(device))
+    z = Variable(torch.randn(batch_size, z_dim).to(device))
+    x_fake, y_fake = G(z), Variable(torch.zeros(batch_size, 1).to(device))
 
     D_output = D(x_fake)
     D_fake_loss = criterion(D_output, y_fake)
@@ -108,8 +108,8 @@ def G_train(x):
     #=======================Train the generator=======================#
     G.zero_grad()
 
-    z = Variable(torch.randn(bs, z_dim).to(device))
-    y = Variable(torch.ones(bs, 1).to(device))
+    z = Variable(torch.randn(batch_size, z_dim).to(device))
+    y = Variable(torch.ones(batch_size, 1).to(device))
 
     G_output = G(z)
     D_output = D(G_output)
@@ -125,6 +125,7 @@ n_epoch = 200
 for epoch in range(1, n_epoch+1):
     D_losses, G_losses = [], []
     for batch_idx, (x, _) in enumerate(train_loader):
+        print("batch_idx",batch_idx)
         D_losses.append(D_train(x))
         G_losses.append(G_train(x))
 
@@ -132,7 +133,7 @@ for epoch in range(1, n_epoch+1):
             (epoch), n_epoch, torch.mean(torch.FloatTensor(D_losses)), torch.mean(torch.FloatTensor(G_losses))))
 
 with torch.no_grad():
-    test_z = Variable(torch.randn(bs, z_dim).to(device))
+    test_z = Variable(torch.randn(batch_size, z_dim).to(device))
     generated = G(test_z)
 
     save_image(generated.view(generated.size(0), 1, 28, 28), './mnist_samples/sample_' + '.png')

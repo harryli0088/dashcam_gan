@@ -5,6 +5,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.autograd import Variable
+from torchvision.utils import save_image
 from get_latest_model import get_latest_model
 
 # Device configuration
@@ -17,7 +18,6 @@ BATCH_SIZE = 100
 NOISE_DIM = 100
 EPOCHS = 200
 TRAIN_DATA_PATH = "./image_data_train"
-TEST_DATA_PATH = "./image_data_test"
 TRANSFORM_IMG = transforms.Compose([
     transforms.Resize(256),
     transforms.CenterCrop(256),
@@ -28,8 +28,6 @@ TRANSFORM_IMG = transforms.Compose([
 
 train_dataset = datasets.ImageFolder(root=TRAIN_DATA_PATH, transform=TRANSFORM_IMG)
 train_data_loader = torch.utils.data.DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
-test_dataset = datasets.ImageFolder(root=TEST_DATA_PATH, transform=TRANSFORM_IMG)
-test_data_loader  = torch.utils.data.DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
 
 
 
@@ -70,7 +68,8 @@ class Discriminator(nn.Module):
 # build network
 
 dashcam_dim = train_dataset[0][0].shape[0] * train_dataset[0][0].shape[1] * train_dataset[0][0].shape[2]
-
+print(train_dataset[0][0].shape[0],train_dataset[0][0].shape[1],train_dataset[0][0].shape[2])
+print(dashcam_dim)
 saved_G = get_latest_model("g-","./dashcam_model/")
 saved_D = get_latest_model("d-","./dashcam_model/")
 G = Generator(g_input_dim = NOISE_DIM, g_output_dim = dashcam_dim).to(device)
@@ -93,6 +92,7 @@ D_optimizer = optim.Adam(D.parameters(), lr = lr)
 
 def D_train(x):
     #=======================Train the discriminator=======================#
+
     D.zero_grad()
 
     # train discriminator on real
@@ -102,8 +102,10 @@ def D_train(x):
     D_output = D(x_real)
     D_real_loss = criterion(D_output, y_real)
     D_real_score = D_output
+    print(x.size(),x_real.size(),y_real.size(),D_output.size())
 
-    # train discriminator on facke
+
+    # train discriminator on fake
     z = Variable(torch.randn(BATCH_SIZE, NOISE_DIM).to(device))
     x_fake, y_fake = G(z), Variable(torch.zeros(BATCH_SIZE, 1).to(device))
 
@@ -122,12 +124,12 @@ def G_train(x):
     #=======================Train the generator=======================#
     G.zero_grad()
 
-    z = Variable(torch.randn(BATCH_SIZE, NOISE_DIM).to(device))
-    y = Variable(torch.ones(BATCH_SIZE, 1).to(device))
+    z = Variable(torch.randn(BATCH_SIZE, NOISE_DIM).to(device)) #get noise input
+    y = Variable(torch.ones(BATCH_SIZE, 1).to(device)) #ones, ie G wants D to think this is real
 
-    G_output = G(z)
-    D_output = D(G_output)
-    G_loss = criterion(D_output, y)
+    G_output = G(z) #give G input noise
+    D_output = D(G_output) #pass the output from G into D
+    G_loss = criterion(D_output, y) #get the loss between the desired D output and the actual D output
 
     # gradient backprop & optimize ONLY G's parameters
     G_loss.backward()
@@ -138,9 +140,10 @@ def G_train(x):
 for epoch in range(1, EPOCHS+1):
     D_losses, G_losses = [], []
     for batch_idx, (x, _) in enumerate(train_data_loader):
-        print("epoch", epoch, "batch_idx",batch_idx)
-        D_losses.append(D_train(x))
-        G_losses.append(G_train(x))
+        print("epoch", epoch, "batch_idx",batch_idx, "x",x.size()[0])
+        if x.size()[0]==BATCH_SIZE:
+            D_losses.append(D_train(x))
+            G_losses.append(G_train(x))
 
     filename_base = "-epoch-"+str(epoch)
     torch.save(G.state_dict(), "./dashcam_model/g"+filename_base)
