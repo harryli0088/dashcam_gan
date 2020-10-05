@@ -79,7 +79,7 @@ if len(saved_G["filepath"]) > 0:
     G.load_state_dict(torch.load(saved_G["filepath"]))
     D.load_state_dict(torch.load(saved_D["filepath"]))
     EPOCHS = EPOCHS - saved_G["latest_epoch"]
-
+print("EPOCHS",EPOCHS)
 
 # loss
 criterion = nn.BCELoss()
