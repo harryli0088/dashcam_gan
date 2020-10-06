@@ -1,4 +1,4 @@
-# prerequisites
+import argparse
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -7,6 +7,14 @@ from torchvision import datasets, transforms
 from torch.autograd import Variable
 from torchvision.utils import save_image
 from get_latest_model import get_latest_model
+from azureml.core import Run
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--data_path', type=str, help='Path to the training data', default="./data/image_data_train")
+parser.add_argument('--dashcam_model', type=str, help='Path to the dashcam gan models', default="./dashcam_model/")
+parser.add_argument('--dashcam_samples', type=str, help='Path to the dashcam generator samples', default="./dashcam_samples")
+args = parser.parse_args()
+run = Run.get_context()
 
 # Device configuration
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -17,7 +25,9 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 BATCH_SIZE = 100
 NOISE_DIM = 100
 EPOCHS = 200
-TRAIN_DATA_PATH = "./image_data_train"
+TRAIN_DATA_PATH = args.data_path
+DASHCAM_MODEL_PATH = args.dashcam_model
+DASHCAM_SAMPLE_PATH = args.dashcam_model
 TRANSFORM_IMG = transforms.Compose([
     transforms.Resize(256),
     transforms.CenterCrop(256),
@@ -69,9 +79,9 @@ class Discriminator(nn.Module):
 
 dashcam_dim = train_dataset[0][0].shape[0] * train_dataset[0][0].shape[1] * train_dataset[0][0].shape[2]
 print(train_dataset[0][0].shape[0],train_dataset[0][0].shape[1],train_dataset[0][0].shape[2])
-print(dashcam_dim)
-saved_G = get_latest_model("g-","./dashcam_model/")
-saved_D = get_latest_model("d-","./dashcam_model/")
+print("dashcam_dim",dashcam_dim)
+saved_G = get_latest_model("g-",DASHCAM_MODEL_PATH)
+saved_D = get_latest_model("d-",DASHCAM_MODEL_PATH)
 G = Generator(g_input_dim = NOISE_DIM, g_output_dim = dashcam_dim).to(device)
 D = Discriminator(dashcam_dim).to(device)
 
@@ -102,7 +112,8 @@ def D_train(x):
     D_output = D(x_real)
     D_real_loss = criterion(D_output, y_real)
     D_real_score = D_output
-    print(x.size(),x_real.size(),y_real.size(),D_output.size())
+    print("x.size()",x.size(),x_real.size())
+    print("y_real.size()",y_real.size(),D_output.size())
 
 
     # train discriminator on fake
@@ -140,26 +151,29 @@ def G_train(x):
 for epoch in range(1, EPOCHS+1):
     D_losses, G_losses = [], []
     for batch_idx, (x, _) in enumerate(train_data_loader):
-        print("epoch", epoch, "batch_idx",batch_idx, "x",x.size()[0])
+        print("epoch", epoch)
+        print("batch_idx",batch_idx)
+        print("x",x.size()[0])
         if x.size()[0]==BATCH_SIZE:
             D_losses.append(D_train(x))
             G_losses.append(G_train(x))
 
     filename_base = "-epoch-"+str(epoch)
-    torch.save(G.state_dict(), "./dashcam_model/g"+filename_base)
-    torch.save(D.state_dict(), "./dashcam_model/d"+filename_base)
-    print('[%d/%d]: loss_d: %.3f, loss_g: %.3f' % (
-            (epoch), EPOCHS, torch.mean(torch.FloatTensor(D_losses)), torch.mean(torch.FloatTensor(G_losses))))
+    torch.save(G.state_dict(), DASHCAM_MODEL_PATH+"/g"+filename_base)
+    torch.save(D.state_dict(), DASHCAM_MODEL_PATH+"/d"+filename_base)
+    print('epoch', epoch)
+    run.log('loss_d:', torch.mean(torch.FloatTensor(D_losses)))
+    run.log('loss_g:', torch.mean(torch.FloatTensor(G_losses)))
 
     with torch.no_grad():
         test_z = Variable(torch.randn(BATCH_SIZE, NOISE_DIM).to(device))
         generated = G(test_z)
 
-        save_image(generated.view(generated.size(0), 3, 256, 256), './dashcam_samples/sample_' + str(epoch) + '.png')
+        save_image(generated.view(generated.size(0), 3, 256, 256), DASHCAM_SAMPLE_PATH+'/sample_' + str(epoch) + '.png')
 
 
 with torch.no_grad():
     test_z = Variable(torch.randn(BATCH_SIZE, NOISE_DIM).to(device))
     generated = G(test_z)
 
-    save_image(generated.view(generated.size(0), 3, 256, 256), './dashcam_samples/sample_final' + '.png')
+    save_image(generated.view(generated.size(0), 3, 256, 256), DASHCAM_SAMPLE_PATH+'/sample_final' + '.png')
