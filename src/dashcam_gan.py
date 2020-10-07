@@ -26,6 +26,8 @@ BATCH_SIZE = 100
 NOISE_DIM = 100
 EPOCHS = 200
 TRAIN_DATA_PATH = args.data_path
+
+# Azure can store files in the outputs/ directory
 DASHCAM_MODEL_PATH = "./outputs/" # args.dashcam_model
 DASHCAM_SAMPLE_PATH = "./outputs/"
 TRANSFORM_IMG = transforms.Compose([

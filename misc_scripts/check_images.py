@@ -12,4 +12,3 @@ def check_images(path):
 
 
 check_images("./image_data_train/1/")
-check_images("./image_data_test/1/")
