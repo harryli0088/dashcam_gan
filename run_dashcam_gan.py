@@ -9,8 +9,8 @@ if __name__ == "__main__":
 
     datastore = ws.get_default_datastore()
     dataset = Dataset.File.from_files(path=(datastore, 'image_data_train'))
-    models = Dataset.File.from_files(path=(datastore, 'dashcam_model'))
-    samples = Dataset.File.from_files(path=(datastore, 'dashcam_samples'))
+    # models = Dataset.File.from_files(path=(datastore, 'dashcam_model'))
+    # samples = Dataset.File.from_files(path=(datastore, 'dashcam_samples'))
 
     experiment = Experiment(workspace=ws, name='day1-experiment-data')
 
@@ -20,8 +20,9 @@ if __name__ == "__main__":
         compute_target='cpu-cluster',
         arguments=[
             '--data_path', dataset.as_named_input('input').as_mount(),
-            '--dashcam_model', models.as_named_input('models').as_mount(),
-            '--dashcam_samples', samples.as_named_input('samples').as_mount()]
+            # '--dashcam_model', models.as_named_input('models').as_mount(),
+            # '--dashcam_samples', samples.as_named_input('samples').as_mount()
+            ]
         )
 
     # set up pytorch environment

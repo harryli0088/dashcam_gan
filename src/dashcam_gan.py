@@ -11,8 +11,8 @@ from azureml.core import Run
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--data_path', type=str, help='Path to the training data', default="./data/image_data_train")
-parser.add_argument('--dashcam_model', type=str, help='Path to the dashcam gan models', default="./dashcam_model/")
-parser.add_argument('--dashcam_samples', type=str, help='Path to the dashcam generator samples', default="./dashcam_samples")
+# parser.add_argument('--dashcam_model', type=str, help='Path to the dashcam gan models', default="./dashcam_model/")
+# parser.add_argument('--dashcam_samples', type=str, help='Path to the dashcam generator samples', default="./dashcam_samples")
 args = parser.parse_args()
 run = Run.get_context()
 
@@ -26,8 +26,8 @@ BATCH_SIZE = 100
 NOISE_DIM = 100
 EPOCHS = 200
 TRAIN_DATA_PATH = args.data_path
-DASHCAM_MODEL_PATH = args.dashcam_model
-DASHCAM_SAMPLE_PATH = args.dashcam_model
+DASHCAM_MODEL_PATH = "./outputs/" # args.dashcam_model
+DASHCAM_SAMPLE_PATH = "./outputs/"
 TRANSFORM_IMG = transforms.Compose([
     transforms.Resize(256),
     transforms.CenterCrop(256),
@@ -80,15 +80,15 @@ class Discriminator(nn.Module):
 dashcam_dim = train_dataset[0][0].shape[0] * train_dataset[0][0].shape[1] * train_dataset[0][0].shape[2]
 print(train_dataset[0][0].shape[0],train_dataset[0][0].shape[1],train_dataset[0][0].shape[2])
 print("dashcam_dim",dashcam_dim)
-saved_G = get_latest_model("g-",DASHCAM_MODEL_PATH)
-saved_D = get_latest_model("d-",DASHCAM_MODEL_PATH)
+# saved_G = get_latest_model("g-",DASHCAM_MODEL_PATH)
+# saved_D = get_latest_model("d-",DASHCAM_MODEL_PATH)
 G = Generator(g_input_dim = NOISE_DIM, g_output_dim = dashcam_dim).to(device)
 D = Discriminator(dashcam_dim).to(device)
 
-if len(saved_G["filepath"]) > 0:
-    G.load_state_dict(torch.load(saved_G["filepath"]))
-    D.load_state_dict(torch.load(saved_D["filepath"]))
-    EPOCHS = EPOCHS - saved_G["latest_epoch"]
+# if len(saved_G["filepath"]) > 0:
+#     G.load_state_dict(torch.load(saved_G["filepath"]))
+#     D.load_state_dict(torch.load(saved_D["filepath"]))
+#     EPOCHS = EPOCHS - saved_G["latest_epoch"]
 print("EPOCHS",EPOCHS)
 
 # loss
