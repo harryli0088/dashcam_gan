@@ -26,7 +26,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 # some hyperparameters
-BATCH_SIZE = 1 #00 # 1
+BATCH_SIZE = 100
 NOISE_DIM = 100
 EPOCHS = 200
 LEARNING_RATE = 0.0002
@@ -92,18 +92,19 @@ class Discriminator(nn.Module):
 # build Generator and Discriminator
 dashcam_dim = train_dataset[0][0].shape[0] * train_dataset[0][0].shape[1] * train_dataset[0][0].shape[2]
 print(train_dataset[0][0].shape[0],train_dataset[0][0].shape[1],train_dataset[0][0].shape[2])
-print("dashcam_dim",dashcam_dim)
+print("dashcam_dim", dashcam_dim)
 G = Generator(g_input_dim = NOISE_DIM, g_output_dim = dashcam_dim).to(device)
 D = Discriminator(dashcam_dim).to(device)
 
 # used saved models if you have them
 saved_G = get_latest_model("g-",DASHCAM_MODEL_PATH)
 saved_D = get_latest_model("d-",DASHCAM_MODEL_PATH)
+starting_epoch = 1
 if len(saved_G["filepath"]) > 0:
     G.load_state_dict(torch.load(saved_G["filepath"]))
     D.load_state_dict(torch.load(saved_D["filepath"]))
-    EPOCHS = EPOCHS - saved_G["latest_epoch"]
-print("EPOCHS",EPOCHS)
+    starting_epoch = saved_G["latest_epoch"] + 1
+print("EPOCHS", EPOCHS, "starting_epoch", starting_epoch)
 
 # optimizer
 G_optimizer = optim.Adam(G.parameters(), lr = LEARNING_RATE)
@@ -165,7 +166,7 @@ def G_train(x):
     return G_loss.data.item()
 
 # run epochs
-for epoch in range(1, EPOCHS+1):
+for epoch in range(starting_epoch, EPOCHS+1):
     D_losses, G_losses = [], []
 
     # run each batch in the data
