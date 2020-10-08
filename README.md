@@ -1,8 +1,9 @@
 # dashcam_gan
 
-My attempt at creating a Generative Adversarial Network using my car dashcam video data.
+My attempt at creating a Generative Adversarial Network using my car dashcam video data. I had a some dashcam video footage from which I pulled a little over 26,000 frames of images to use as training samples.
 
-
+Example sample image:
+![Example sample image](example_sample_image.jpg)
 
 ## Setting up
 Load your image data into ```data/image_data_train/1```
