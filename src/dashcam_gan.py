@@ -22,7 +22,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 
-BATCH_SIZE = 100
+BATCH_SIZE = 100 # 1
 NOISE_DIM = 100
 EPOCHS = 200
 TRAIN_DATA_PATH = args.data_path
@@ -82,15 +82,19 @@ class Discriminator(nn.Module):
 dashcam_dim = train_dataset[0][0].shape[0] * train_dataset[0][0].shape[1] * train_dataset[0][0].shape[2]
 print(train_dataset[0][0].shape[0],train_dataset[0][0].shape[1],train_dataset[0][0].shape[2])
 print("dashcam_dim",dashcam_dim)
-# saved_G = get_latest_model("g-",DASHCAM_MODEL_PATH)
-# saved_D = get_latest_model("d-",DASHCAM_MODEL_PATH)
+
 G = Generator(g_input_dim = NOISE_DIM, g_output_dim = dashcam_dim).to(device)
 D = Discriminator(dashcam_dim).to(device)
 
-# if len(saved_G["filepath"]) > 0:
-#     G.load_state_dict(torch.load(saved_G["filepath"]))
-#     D.load_state_dict(torch.load(saved_D["filepath"]))
-#     EPOCHS = EPOCHS - saved_G["latest_epoch"]
+
+
+# used saved models if you have them
+saved_G = get_latest_model("g-",DASHCAM_MODEL_PATH)
+saved_D = get_latest_model("d-",DASHCAM_MODEL_PATH)
+if len(saved_G["filepath"]) > 0:
+    G.load_state_dict(torch.load(saved_G["filepath"]))
+    D.load_state_dict(torch.load(saved_D["filepath"]))
+    EPOCHS = EPOCHS - saved_G["latest_epoch"]
 print("EPOCHS",EPOCHS)
 
 # loss
@@ -150,28 +154,37 @@ def G_train(x):
 
     return G_loss.data.item()
 
+# run epochs
 for epoch in range(1, EPOCHS+1):
     D_losses, G_losses = [], []
+
+    # run each batch in the data
     for batch_idx, (x, _) in enumerate(train_data_loader):
         print("epoch", epoch)
         print("batch_idx",batch_idx)
         print("x",x.size()[0])
+
+        # sometimes the input batch size isn't big enough, I'm assuming because there is a remainder number of input samples
+        # only train the D and G if the batch size is correct
         if x.size()[0]==BATCH_SIZE:
             D_losses.append(D_train(x))
             G_losses.append(G_train(x))
+            # break
 
+    # after each epoch, save the state of each model
     filename_base = "-epoch-"+str(epoch)
     torch.save(G.state_dict(), DASHCAM_MODEL_PATH+"/g"+filename_base)
     torch.save(D.state_dict(), DASHCAM_MODEL_PATH+"/d"+filename_base)
     print('epoch', epoch)
-    print('loss_d', torch.mean(torch.FloatTensor(D_losses))[0])
-    print('loss_g', torch.mean(torch.FloatTensor(G_losses))[0])
-    run.log('loss_d:', torch.mean(torch.FloatTensor(D_losses))[0])
-    run.log('loss_g:', torch.mean(torch.FloatTensor(G_losses))[0])
+    print('loss_d', torch.mean(torch.FloatTensor(D_losses)).item())
+    print('loss_g', torch.mean(torch.FloatTensor(G_losses)).item())
+    run.log('loss_d', torch.mean(torch.FloatTensor(D_losses)).item())
+    run.log('loss_g', torch.mean(torch.FloatTensor(G_losses)).item())
 
+    # save full batch of generated images
     with torch.no_grad():
-        test_z = Variable(torch.randn(BATCH_SIZE, NOISE_DIM).to(device))
-        generated = G(test_z)
+        test_z = Variable(torch.randn(BATCH_SIZE, NOISE_DIM).to(device)) # get noise
+        generated = G(test_z) # generate images
 
         save_image(generated.view(generated.size(0), 3, 256, 256), DASHCAM_SAMPLE_PATH+'/sample_' + str(epoch) + '.png')
 
