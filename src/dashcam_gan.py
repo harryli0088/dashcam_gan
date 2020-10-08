@@ -164,8 +164,10 @@ for epoch in range(1, EPOCHS+1):
     torch.save(G.state_dict(), DASHCAM_MODEL_PATH+"/g"+filename_base)
     torch.save(D.state_dict(), DASHCAM_MODEL_PATH+"/d"+filename_base)
     print('epoch', epoch)
-    run.log('loss_d:', torch.mean(torch.FloatTensor(D_losses)))
-    run.log('loss_g:', torch.mean(torch.FloatTensor(G_losses)))
+    print('loss_d', torch.mean(torch.FloatTensor(D_losses))[0])
+    print('loss_g', torch.mean(torch.FloatTensor(G_losses))[0])
+    run.log('loss_d:', torch.mean(torch.FloatTensor(D_losses))[0])
+    run.log('loss_g:', torch.mean(torch.FloatTensor(G_losses))[0])
 
     with torch.no_grad():
         test_z = Variable(torch.randn(BATCH_SIZE, NOISE_DIM).to(device))
