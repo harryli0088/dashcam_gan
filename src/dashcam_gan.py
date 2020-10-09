@@ -40,7 +40,7 @@ DASHCAM_MODEL_PATH = "./outputs/" # args.dashcam_model
 DASHCAM_SAMPLE_PATH = "./outputs/"
 TRANSFORM_IMG = transforms.Compose([
     transforms.Resize(256),
-    transforms.CenterCrop(256),
+    # transforms.CenterCrop(256),
     transforms.ToTensor(),
     transforms.Normalize(
         mean=[0.485, 0.456, 0.406],
@@ -116,7 +116,7 @@ def generate_images(file_path=""):
         test_z = Variable(torch.randn(BATCH_SIZE, NOISE_DIM).to(device))
         generated = G(test_z) # generate images
 
-        save_image(generated.view(generated.size(0), 3, 256, 256),file_path )
+        save_image(generated.view(generated.size(0), 3, train_dataset[0][0].shape[1], train_dataset[0][0].shape[2]),file_path )
 
 
 def D_train(x):
@@ -178,12 +178,13 @@ for epoch in range(starting_epoch, EPOCHS+1):
         if x.size()[0]==BATCH_SIZE:
             D_losses.append(D_train(x))
             G_losses.append(G_train(x))
-            break
+            # break
 
-    # after each epoch, save the state of each model
-    filename_base = "-epoch-"+str(epoch)
-    torch.save(G.state_dict(), DASHCAM_MODEL_PATH+"/g"+filename_base)
-    torch.save(D.state_dict(), DASHCAM_MODEL_PATH+"/d"+filename_base)
+    # after every 10th epoch, save the state of each model
+    if epoch%10 == 0:
+        filename_base = "-epoch-"+str(epoch)
+        torch.save(G.state_dict(), DASHCAM_MODEL_PATH+"/g"+filename_base)
+        torch.save(D.state_dict(), DASHCAM_MODEL_PATH+"/d"+filename_base)
     print('epoch', epoch)
     print('loss_d', torch.mean(torch.FloatTensor(D_losses)).item())
     print('loss_g', torch.mean(torch.FloatTensor(G_losses)).item())
