@@ -12,7 +12,7 @@ try:
     cpu_cluster = ComputeTarget(workspace=ws, name=cpu_cluster_name)
     print('Found existing cluster, use it.')
 except ComputeTargetException:
-    compute_config = AmlCompute.provisioning_configuration(vm_size='STANDARD_D3_V2',
+    compute_config = AmlCompute.provisioning_configuration(vm_size='STANDARD_D12_V2',
                                                             max_nodes=4,
                                                             idle_seconds_before_scaledown=2400)
     cpu_cluster = ComputeTarget.create(ws, cpu_cluster_name, compute_config)
