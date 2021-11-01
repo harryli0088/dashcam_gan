@@ -5,3 +5,4 @@ mnist_samples/
 __pycache__
 .azureml
 create_workplace.py
+old/

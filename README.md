@@ -23,7 +23,11 @@ The discriminator ended up being too good for the generator, and learned much fa
 - when the discriminator or generator are trained and updated
 
 ## Setting up
-Load your image data into ```data/image_data_train/1```
+Load your image data into ```data/image_data_train/1```, ie by running
+
+```
+python get_image_frames_from_videos.py
+```
 
 ## Running locally
 Run ```src/dashcam_gan.py```
