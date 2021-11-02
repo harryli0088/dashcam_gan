@@ -61,14 +61,18 @@ class Generator(nn.Module):
         self.fc1 = nn.Linear(g_input_dim, 256)
         self.fc2 = nn.Linear(self.fc1.out_features, self.fc1.out_features*2)
         self.fc3 = nn.Linear(self.fc2.out_features, self.fc2.out_features*2)
-        self.fc4 = nn.Linear(self.fc3.out_features, g_output_dim)
+        self.fc4 = nn.Linear(self.fc3.out_features, self.fc3.out_features)
+        self.fc5 = nn.Linear(self.fc4.out_features, self.fc4.out_features//2)
+        self.fc6 = nn.Linear(self.fc5.out_features, g_output_dim)
 
     # forward method
     def forward(self, x):
         x = F.leaky_relu(self.fc1(x), 0.2)
         x = F.leaky_relu(self.fc2(x), 0.2)
         x = F.leaky_relu(self.fc3(x), 0.2)
-        return torch.tanh(self.fc4(x))
+        x = F.leaky_relu(self.fc4(x), 0.2)
+        x = F.leaky_relu(self.fc5(x), 0.2)
+        return torch.tanh(self.fc6(x))
 
 class Discriminator(nn.Module):
     def __init__(self, d_input_dim):
