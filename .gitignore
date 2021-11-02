@@ -4,5 +4,5 @@ mnist_samples/
 .DS_Store
 __pycache__
 .azureml
-create_workplace.py
+create_workspace.py
 old/
