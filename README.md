@@ -22,6 +22,12 @@ The discriminator ended up being too good for the generator, and learned much fa
 - the hyperparameters
 - when the discriminator or generator are trained and updated
 
+## Install
+```
+conda install pytorch torchvision -c pytorch
+pip install azureml-sdk opencv-python
+```
+
 ## Setting up
 Load your image data into ```data/image_data_train/1```, ie by running
 
@@ -30,7 +36,7 @@ python get_image_frames_from_videos.py
 ```
 
 ## Running locally
-Run ```src/dashcam_gan.py```
+Run ```src/azure/dashcam_gan.py```
 
 
 ## Running on Microsft Azure
