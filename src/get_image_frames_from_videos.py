@@ -1,3 +1,5 @@
+# run this file to pull out still frames out of your videos
+
 import cv2
 import os
 import sys

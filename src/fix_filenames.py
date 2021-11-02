@@ -1,3 +1,4 @@
+# run this file to tweak the naming convention of your files
 import os
 
 def fix_filenames(path):

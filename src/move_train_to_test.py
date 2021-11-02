@@ -1,3 +1,5 @@
+# run this file to move some training files to testing
+
 import os
 import random
 

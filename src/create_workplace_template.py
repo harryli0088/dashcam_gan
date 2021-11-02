@@ -1,3 +1,4 @@
+# run this file to create an azure workspace using the azure sdk
 from azureml.core import Workspace
 
 ws = Workspace.create(name='<my_workspace_name>', # provide a name for your workspace

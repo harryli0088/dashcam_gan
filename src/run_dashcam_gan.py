@@ -1,3 +1,5 @@
+# run this file to run the dashcam in azure
+
 from azureml.core import Workspace
 from azureml.core import Experiment
 from azureml.core import Environment
