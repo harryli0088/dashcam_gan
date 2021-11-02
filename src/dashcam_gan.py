@@ -26,9 +26,9 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 # some hyperparameters
-BATCH_SIZE = 100
-NOISE_DIM = 100
-EPOCHS = 200
+BATCH_SIZE = 64
+NOISE_DIM = 64
+EPOCHS = 100
 LEARNING_RATE = 0.0002
 loss_function = nn.BCELoss()
 
